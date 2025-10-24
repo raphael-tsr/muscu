@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Timer Muscu Simple</title>
+  <style>
+    body {
+      background:#0f1724;
+      color:#fff;
+      font-family:Arial;
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      height:100vh;
+      margin:0;
+    }
+    h1 { margin-bottom:20px; }
+    #time { font-size:70px; margin:20px 0; }
+    button {
+      background:#f97316;
+      border:none;
+      color:#fff;
+      font-size:18px;
+      padding:10px 20px;
+      margin:8px;
+      border-radius:10px;
+      cursor:pointer;
+      transition:0.2s;
+    }
+    button:hover { opacity:0.9; transform:scale(1.05); }
+    #controls { margin-top:10px; display:flex; justify-content:center; flex-wrap:wrap; }
+  </style>
+</head>
+<body>
+  <h1>Timer Muscu</h1>
+  <div id="time">00:00.000</div>
+  <div id="controls">
+    <button id="minus">-15s</button>
+    <button id="plus">+15s</button>
+    <button id="start">Start</button>
+    <button id="pause">Pause</button>
+  </div>
+
+  <!-- Son "ding" -->
+  <audio id="ding" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+  <script>
+    let duration = 0;
+    let timeLeft = 0;
+    let timer = null;
+    let paused = false;
+    let lastUpdate = null;
+
+    const timeEl = document.getElementById("time");
+    const dingSound = document.getElementById("ding");
+
+    function updateDisplay(ms = 0) {
+      const totalMs = Math.max(timeLeft * 1000 + ms, 0);
+      const m = Math.floor(totalMs / 60000);
+      const s = Math.floor((totalMs % 60000) / 1000);
+      const milli = Math.floor(totalMs % 1000);
+      timeEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(milli).padStart(3,'0')}`;
+    }
+
+    function startTimer() {
+      if (timeLeft <= 0) return;
+      clearInterval(timer);
+      paused = false;
+      lastUpdate = performance.now();
+
+      timer = setInterval(() => {
+        if (!paused) {
+          const now = performance.now();
+          const delta = now - lastUpdate;
+          lastUpdate = now;
+          timeLeft -= delta / 1000;
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            timeLeft = 0;
+            updateDisplay();
+            dingSound.currentTime = 0;
+            dingSound.play();
+            timeLeft = duration;
+          } else {
+            updateDisplay(timeLeft * 1000 % 1000);
+          }
+        }
+      }, 10);
+    }
+
+    function pauseTimer() {
+      paused = !paused;
+      document.getElementById("pause").textContent = paused ? "Reprendre" : "Pause";
+    }
+
+    document.getElementById("plus").onclick = () => {
+      duration += 15; 
+      timeLeft = duration; 
+      updateDisplay();
+    };
+    document.getElementById("minus").onclick = () => {
+      duration = Math.max(0, duration - 15); 
+      timeLeft = duration; 
+      updateDisplay();
+    };
+    document.getElementById("start").onclick = startTimer;
+    document.getElementById("pause").onclick = pauseTimer;
+
+    updateDisplay();
+  </script>
+</body>
+</html>
